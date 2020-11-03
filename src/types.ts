@@ -8,7 +8,7 @@ declare global {
 }
 
 // TODO Add your configuration elements here for type-checking
-export interface BoilerplateCardConfig extends LovelaceCardConfig {
+export interface ScheduleCardConfig extends LovelaceCardConfig {
   type: string;
   name?: string;
   show_warning?: boolean;
@@ -18,4 +18,9 @@ export interface BoilerplateCardConfig extends LovelaceCardConfig {
   tap_action?: ActionConfig;
   hold_action?: ActionConfig;
   double_tap_action?: ActionConfig;
+}
+
+export interface ScheduleItem {
+  cval: string;
+  nval: string;
 }
