@@ -1,7 +1,7 @@
 import { LitElement, html, customElement, property, TemplateResult, CSSResult, css } from 'lit-element';
 import { HomeAssistant, fireEvent, LovelaceCardEditor, ActionConfig } from 'custom-card-helpers';
 
-import { BoilerplateCardConfig } from './types';
+import { ScheduleCardConfig } from './types';
 
 const options = {
   required: {
@@ -9,6 +9,20 @@ const options = {
     name: 'Required',
     secondary: 'Required options for this card to function',
     show: true,
+    options: {
+      id: {
+        icon: 'tune',
+        name: 'id',
+        secondary: 'id of the schedule',
+        show: true
+      },
+      title: {
+        icon: 'tune',
+        name: 'title',
+        secondary: 'Titre du calendrier',
+        show: true
+      }
+    }
   },
   actions: {
     icon: 'gesture-tap-hold',
@@ -20,39 +34,39 @@ const options = {
         icon: 'gesture-tap',
         name: 'Tap',
         secondary: 'Set the action to perform on tap',
-        show: false,
+        show: false
       },
       hold: {
         icon: 'gesture-tap-hold',
         name: 'Hold',
         secondary: 'Set the action to perform on hold',
-        show: false,
+        show: false
       },
       double_tap: {
         icon: 'gesture-double-tap',
         name: 'Double Tap',
         secondary: 'Set the action to perform on double tap',
-        show: false,
-      },
-    },
+        show: false
+      }
+    }
   },
   appearance: {
     icon: 'palette',
     name: 'Appearance',
     secondary: 'Customize the name, icon, etc',
-    show: false,
-  },
+    show: false
+  }
 };
 
-@customElement('boilerplate-card-editor')
-export class BoilerplateCardEditor extends LitElement implements LovelaceCardEditor {
+@customElement('schedule-card-editor')
+export class ScheduleCardEditor extends LitElement implements LovelaceCardEditor {
   @property() public hass?: HomeAssistant;
-  @property() private _config?: BoilerplateCardConfig;
+  @property() private _config?: ScheduleCardConfig;
   @property() private _toggle?: boolean;
   @property() private _helpers?: any;
   private _initialized = false;
 
-  public setConfig(config: BoilerplateCardConfig): void {
+  public setConfig(config: ScheduleCardConfig): void {
     this._config = config;
 
     this.loadCardHelpers();
@@ -66,60 +80,20 @@ export class BoilerplateCardEditor extends LitElement implements LovelaceCardEdi
     return true;
   }
 
-  get _name(): string {
+  get _id(): string {
     if (this._config) {
-      return this._config.name || '';
+      return this._config.id || '';
     }
 
     return '';
   }
 
-  get _entity(): string {
+  get _title(): string {
     if (this._config) {
-      return this._config.entity || '';
+      return this._config.title || 'title';
     }
 
-    return '';
-  }
-
-  get _show_warning(): boolean {
-    if (this._config) {
-      return this._config.show_warning || false;
-    }
-
-    return false;
-  }
-
-  get _show_error(): boolean {
-    if (this._config) {
-      return this._config.show_error || false;
-    }
-
-    return false;
-  }
-
-  get _tap_action(): ActionConfig {
-    if (this._config) {
-      return this._config.tap_action || { action: 'more-info' };
-    }
-
-    return { action: 'more-info' };
-  }
-
-  get _hold_action(): ActionConfig {
-    if (this._config) {
-      return this._config.hold_action || { action: 'none' };
-    }
-
-    return { action: 'none' };
-  }
-
-  get _double_tap_action(): ActionConfig {
-    if (this._config) {
-      return this._config.double_tap_action || { action: 'none' };
-    }
-
-    return { action: 'none' };
+    return 'title';
   }
 
   protected render(): TemplateResult | void {
@@ -144,21 +118,7 @@ export class BoilerplateCardEditor extends LitElement implements LovelaceCardEdi
         </div>
         ${options.required.show
           ? html`
-              <div class="values">
-                <paper-dropdown-menu
-                  label="Entity (Required)"
-                  @value-changed=${this._valueChanged}
-                  .configValue=${'entity'}
-                >
-                  <paper-listbox slot="dropdown-content" .selected=${entities.indexOf(this._entity)}>
-                    ${entities.map(entity => {
-                      return html`
-                        <paper-item>${entity}</paper-item>
-                      `;
-                    })}
-                  </paper-listbox>
-                </paper-dropdown-menu>
-              </div>
+              <div class="values"></div>
             `
           : ''}
         <div class="option" @click=${this._toggleOption} .option=${'actions'}>
@@ -225,29 +185,7 @@ export class BoilerplateCardEditor extends LitElement implements LovelaceCardEdi
         </div>
         ${options.appearance.show
           ? html`
-              <div class="values">
-                <paper-input
-                  label="Name (Optional)"
-                  .value=${this._name}
-                  .configValue=${'name'}
-                  @value-changed=${this._valueChanged}
-                ></paper-input>
-                <br />
-                <ha-formfield .label=${`Toggle warning ${this._show_warning ? 'off' : 'on'}`}>
-                  <ha-switch
-                    .checked=${this._show_warning !== false}
-                    .configValue=${'show_warning'}
-                    @change=${this._valueChanged}
-                  ></ha-switch>
-                </ha-formfield>
-                <ha-formfield .label=${`Toggle error ${this._show_error ? 'off' : 'on'}`}>
-                  <ha-switch
-                    .checked=${this._show_error !== false}
-                    .configValue=${'show_error'}
-                    @change=${this._valueChanged}
-                  ></ha-switch>
-                </ha-formfield>
-              </div>
+              <div class="values"></div>
             `
           : ''}
       </div>
@@ -296,7 +234,7 @@ export class BoilerplateCardEditor extends LitElement implements LovelaceCardEdi
       } else {
         this._config = {
           ...this._config,
-          [target.configValue]: target.checked !== undefined ? target.checked : target.value,
+          [target.configValue]: target.checked !== undefined ? target.checked : target.value
         };
       }
     }

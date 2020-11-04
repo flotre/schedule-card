@@ -9,6 +9,8 @@ import {
   getLovelace
 } from 'custom-card-helpers';
 
+import './editor';
+
 import { ScheduleCardConfig, ScheduleItem } from './types';
 import { CARD_VERSION } from './const';
 
@@ -49,19 +51,24 @@ console.info(
 
 @customElement('schedule-card')
 export class ScheduleCard extends LitElement {
-  static getStubConfig(): object {
+  public static async getConfigElement(): Promise<LovelaceCardEditor> {
+    return document.createElement('schedule-card-editor');
+  }
+
+  public static getStubConfig(): object {
     return {};
   }
 
-  // TODO Add any properities that should cause your element to re-render here
+  // Add any properities that should cause your element to re-render here
   @property() public hass!: HomeAssistant;
-  @property() private _config!: ScheduleCardConfig;
+  @property() private config!: ScheduleCardConfig;
   @property() private _select_start!: string;
   @property() private _hours!: Array<number>;
   @property() private _weekdays!: Array<string>;
   @property() private mode!: string;
   @property() private entities!: Array<string>;
   @property() private schedule!: Array<Array<ScheduleItem>>;
+  @property() private _helpers?: any;
 
   constructor() {
     super();
@@ -72,20 +79,32 @@ export class ScheduleCard extends LitElement {
       this._hours.push(i);
     }
     this.mode = 'comfort';
+    this.loadCardHelpers();
   }
 
   getCardSize(): number {
-    return (this._config ? (this._config.title ? 1 : 0) : 0) + 3;
+    return (this.config ? (this.config.title ? 1 : 0) : 0) + 3;
   }
 
   setConfig(config: ScheduleCardConfig): void {
-    this._config = config;
+    if (!config || config.show_error) {
+      throw new Error(localize('common.invalid_configuration'));
+    }
+    if (config.test_gui) {
+      getLovelace().setEditMode(true);
+    }
+
     if (!config.id) {
       throw new Error('You need to define an id');
     }
     if (!config.title) {
       throw new Error('You need to define a title');
     }
+
+    this.config = {
+      name: 'Schedule',
+      ...config
+    };
 
     this._fetchData();
   }
@@ -97,6 +116,10 @@ export class ScheduleCard extends LitElement {
 
   disconnectedCallback(): void {
     super.disconnectedCallback();
+  }
+
+  private async loadCardHelpers(): Promise<void> {
+    this._helpers = await (window as any).loadCardHelpers();
   }
 
   private render_entete(): TemplateResult {
@@ -145,12 +168,14 @@ export class ScheduleCard extends LitElement {
   }
 
   render(): TemplateResult | void {
-    if (!this._config || !this.hass || !this.schedule || !this.entities) {
+    if (!this.config || !this.hass || !this.schedule || !this.entities) {
       return html``;
     }
+    this._helpers.importMoreInfoControl('climate');
+
     console.log('render', this.entities);
     return html`
-      <ha-card .header="${this._config.title}">
+      <ha-card .header="${this.config.title}">
         <div class="wrapper">
           <div class="entete_h"></div>
           ${this.render_entete()}${this.render_weekday()}
@@ -172,18 +197,6 @@ export class ScheduleCard extends LitElement {
           )}
         </div>
         <div>
-          <select size="3" @change="${this._onclick_thermostat}" multiple>
-            ${this._getThermostat().map(
-              name => html`
-                <option value="${name}" ?selected="${this.entities.includes(name)}">${name}</option>
-              `
-            )}
-          </select>
-        </div>
-      </ha-card>
-    `;
-  }
-  /*
           <paper-dropdown-menu label="Thermostat">
             <paper-listbox
               slot="dropdown-content"
@@ -199,14 +212,10 @@ export class ScheduleCard extends LitElement {
               )}
             </paper-listbox>
           </paper-dropdown-menu>
-
-
-<select id="cars" name="cars" size="1">
-    <option value="volvo">Volvo</option>
-    <option value="saab">Saab</option>
-    <option value="fiat">Fiat</option>
-    <option value="audi">Audi</option>
-  </select>*/
+        </div>
+      </ha-card>
+    `;
+  }
 
   static get styles(): CSSResult {
     return css`
@@ -225,7 +234,7 @@ export class ScheduleCard extends LitElement {
 
   async _fetchData(): Promise<void> {
     if (this.hass) {
-      const data = await fetchSchedule(this.hass, this._config.id);
+      const data = await fetchSchedule(this.hass, this.config.id);
       // update schedule and entities
       if (data.schedule) {
         this.entities = Object.assign([], data.entities);
@@ -244,7 +253,7 @@ export class ScheduleCard extends LitElement {
   }
 
   _updateData(): void {
-    updateSchedule(this.hass, this._config.id, this.schedule, this.entities).catch(() => {
+    updateSchedule(this.hass, this.config.id, this.schedule, this.entities).catch(() => {
       console.log('updateSchedule.catch');
       this._fetchData();
     });
@@ -344,13 +353,6 @@ export class ScheduleCard extends LitElement {
   _onclick_thermostat(ev): void {
     if (ev) {
       // update entities selected
-      console.log('_onclick_thermostat', ev.target.selectedOptions);
-      const entities: string[] = [];
-      for (const thermo of ev.target.selectedOptions) {
-        entities.push(thermo.value);
-      }
-      console.log('_onclick_thermostat', entities);
-      this.entities = entities;
       this._updateData();
     }
   }
