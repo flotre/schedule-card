@@ -173,7 +173,7 @@ export class ScheduleCard extends LitElement {
     }
     this._helpers.importMoreInfoControl('climate');
 
-    console.log('render', this.entities);
+    console.log('render', this.entities, this.config);
     return html`
       <ha-card .header="${this.config.title}">
         <div class="wrapper">
@@ -234,12 +234,14 @@ export class ScheduleCard extends LitElement {
 
   async _fetchData(): Promise<void> {
     if (this.hass) {
+      console.info('fetch data...', this.config);
       const data = await fetchSchedule(this.hass, this.config.id);
+      console.info('fetched data=', data);
       // update schedule and entities
       if (data.schedule) {
         this.entities = Object.assign([], data.entities);
         this.schedule = Object.assign([], data.schedule);
-      } else if (!this.schedule && !this.entities) {
+      } else {
         this.schedule = Array(this._weekdays.length)
           .fill(0)
           .map(() =>
